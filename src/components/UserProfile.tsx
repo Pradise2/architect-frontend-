@@ -1,9 +1,18 @@
 // src/components/UserProfile.tsx
-import { useState, useEffect } from 'react'; // <-- Import useEffect
+import { useState, useEffect } from 'react';
 import { useAccount, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { userIdentityAddress, userIdentityABI } from '../contracts';
-// We only need the type, so we can use 'import type'
-import type { UserIdentity } from '../typechain-types';
+
+// Manually define the UserProfile type based on your contract's struct.
+// This removes the need for the missing TypeChain import.
+type UserProfileType = {
+  userAddress: `0x${string}`;
+  username: string;
+  skills: string;
+  ipfsPortfolioHash: `0x${string}`;
+  reputationScore: bigint;
+  projectsCompleted: bigint;
+};
 
 export function UserProfile() {
   const { address, isConnected } = useAccount();
@@ -23,12 +32,11 @@ export function UserProfile() {
   });
 
   // Wagmi Hook to WRITE data (create a profile)
-  const { data: hash, writeContract, isPending: isCreating, isSuccess: isCreateStarted } = useWriteContract();
+  const { data: hash, writeContract, isPending: isCreating } = useWriteContract();
 
   // Wagmi Hook to wait for the transaction to be mined
   const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
 
-  // *** THE FIX IS HERE ***
   // Use a useEffect hook to react to the transaction being confirmed
   useEffect(() => {
     if (isConfirmed) {
@@ -36,7 +44,6 @@ export function UserProfile() {
       refetch(); // Refetch the profile data after the transaction is successful
     }
   }, [isConfirmed, refetch]);
-  // ***********************
 
   const handleCreateProfile = () => {
     if (!username || !skills) {
@@ -55,15 +62,18 @@ export function UserProfile() {
 
   if (isProfileLoading) return <p>Loading profile...</p>;
 
+  // Cast the returned data to our manually defined type
+  const typedProfile = profile as UserProfileType | undefined;
+
   // Check if profile exists and userAddress is not the zero address
-  if (profile && profile.userAddress !== '0x0000000000000000000000000000000000000000') {
+  if (typedProfile && typedProfile.userAddress !== '0x0000000000000000000000000000000000000000') {
     return (
       <div className="text-left">
         <h3 className="text-xl font-bold">Your Profile</h3>
-        <p><strong>Username:</strong> {profile.username}</p>
-        <p><strong>Skills:</strong> {profile.skills}</p>
-        <p><strong>Reputation:</strong> {profile.reputationScore.toString()}</p>
-        <p><strong>Projects Completed:</strong> {profile.projectsCompleted.toString()}</p>
+        <p><strong>Username:</strong> {typedProfile.username}</p>
+        <p><strong>Skills:</strong> {typedProfile.skills}</p>
+        <p><strong>Reputation:</strong> {typedProfile.reputationScore.toString()}</p>
+        <p><strong>Projects Completed:</strong> {typedProfile.projectsCompleted.toString()}</p>
       </div>
     );
   }

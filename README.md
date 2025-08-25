@@ -1,6 +1,7 @@
 <div align="center">
 
-# 🏛️ The Architect 🏛️
+# 🏛️ The Architect Protocol 🏛️
+
 
 **A Decentralized, Community-Governed Freelance Ecosystem**
 
